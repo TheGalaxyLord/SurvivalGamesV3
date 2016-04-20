@@ -57,19 +57,6 @@ class SurvivalGamesV3 extends PluginBase implements Listener {
 		$this->getServer()->getScheduler()->scheduleRepeatingTask(new GameSender($this), 20);
 		$this->getServer()->getScheduler()->scheduleRepeatingTask(new RefreshSigns($this), 10);
 	}
-	
-	public function playerDeath($spawn) {
-        $spawn = $this->getServer()->getDefaultLevel()->getSafeSpawn(); 
-        $this->getServer()->getDefaultLevel()->loadChunk($spawn->getFloorX(), 
-        $spawn->getFloorZ()); $player->teleport($spawn,0,0);
-	}
-        
-        public function playerJoin($spawn){
-	$spawn = $this->getServer()->getDefaultLevel()->getSafeSpawn(); 
-        $this->getServer()->getDefaultLevel()->loadChunk($spawn->getFloorX(), 
-        $spawn->getFloorZ()); $player->teleport($spawn,0,0);
-	}
-		
 	public function onMove(PlayerMoveEvent $event)
 	{
 		$player = $event->getPlayer();
@@ -240,9 +227,9 @@ class SurvivalGamesV3 extends PluginBase implements Listener {
 						$spawn = new Position($thespawn[0]+0.5,$thespawn[1],$thespawn[2]+0.5,$level);
 						$level->loadChunk($spawn->getFloorX(), $spawn->getFloorZ());
 						$player->teleport($spawn,0,0);
-						$player->setNameTag($player->getName());
+						$player->setNameTag(TextFormat::BOLD . TextFormat::RED . $player->getName());
 						$player->getInventory()->clearAll();
-						$player->sendMessage("§7§l[§fS§cG§7] You have Successfully Joined a Match!");
+						$player->sendMessage($this->prefix . " You have Successfully Joined a Match!");
 						$config2 = new Config($this->getDataFolder() . "/rank.yml", Config::YAML);
 						$rank = $config2->get($player->getName());
 						if($rank == "§b[§aVIP§4+§b]")
