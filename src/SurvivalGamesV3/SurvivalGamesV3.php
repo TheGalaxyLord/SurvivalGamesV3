@@ -27,13 +27,13 @@ use pocketmine\entity\Effect;
 
 use pocketmine\item\Item;
 use pocketmine\tile\Chest;
-use pocketmine\inventory\ChestInventory;
-use pocketmine\block\Block;
-use pocketmine\tile\Sign;
-
-use pocketmine\Player;
+use pocketmine\event\plugin\PluginEvent;
+use pocketmine\entity\Entity;
+use pocketmine\network\protocol\AddEntityPacket;
+use onebone\economyapi\EconomyAPI;
 
 class SurvivalGamesV3 extends PluginBase implements Listener {
+	
     public $prefix = TextFormat::GRAY . "[" . TextFormat::WHITE . TextFormat::BOLD . "S" . TextFormat::RED . "G" . TextFormat::RESET . TextFormat::GRAY . "] ";
 	public $mode = 0;
 	public $arenas = array();
@@ -42,11 +42,11 @@ class SurvivalGamesV3 extends PluginBase implements Listener {
 	public function onEnable()
 	{
         $this->getServer()->getPluginManager()->registerEvents($this ,$this);
-		$this->getLogger()->info(TextFormat::GREEN . "SurvivalGames Loaded!");
-		@mkdir($this->getDataFolder());
-		$config2 = new Config($this->getDataFolder() . "/rank.yml", Config::YAML);
-		$config2->save();
-		$config = new Config($this->getDataFolder() . "/config.yml", Config::YAML);
+                $this->economy = $this->getServer()->getPluginManager()->getPlugin("EconomyAPI");
+                $this->api = EconomyAPI::getInstance ();
+		$this->getLogger()->info(C::GREEN . "SurvivalGames Loaded!");
+		$this->saveResource("rank.yml");
+		$this->saveResource("config.yml");
 		if($config->get("arenas")!=null)
 		{
 			$this->arenas = $config->get("arenas");
@@ -156,17 +156,17 @@ class SurvivalGamesV3 extends PluginBase implements Listener {
 					if(!empty($args[1]))
 					{
 					$rank = "";
-					if($args[0]=="VIP+")
+					if($args[0]=="UltraVIP")
 					{
-						$rank = "§b[§aVIP§4+§b]";
+						$rank = "§8[§5Ultra§2VIP§8]";
 					}
-					else if($args[0]=="YouTuber")
+					else if($args[0]=="YouTube")
 					{
-						$rank = "§b[§4You§7Tuber§b]";
+						$rank = "§8[§4You§cTube§8]";
 					}
-					else if($args[0]=="YouTuber+")
+					else if($args[0]=="MVP")
 					{
-						$rank = "§b[§4You§7Tuber§4+§b]";
+						$rank = "§8[§9MVP§8]";
 					}
 					else
 					{
@@ -239,7 +239,7 @@ class SurvivalGamesV3 extends PluginBase implements Listener {
 						$player->sendMessage($this->prefix . " You have Successfully Joined a Match!");
 						$config2 = new Config($this->getDataFolder() . "/rank.yml", Config::YAML);
 						$rank = $config2->get($player->getName());
-						if($rank == "§b[§aVIP§4+§b]")
+						if($rank == "§8[§5Ultra§2VIP§8]")
 						{
 							$player->getInventory()->setContents(array(Item::get(0, 0, 0)));
 							$player->getInventory()->setHelmet(Item::get(Item::CHAIN_HELMET));
@@ -259,7 +259,7 @@ class SurvivalGamesV3 extends PluginBase implements Listener {
 							$player->getInventory()->setItem(0, Item::get(Item::IRON_AXE, 0, 1));
 							$player->getInventory()->setHotbarSlotIndex(0, 0);
 						}
-						else if($rank == "§b[§4You§7Tuber§b]")
+						else if($rank == "§8[§4You§cTube§8")
 						{
 							$player->getInventory()->setContents(array(Item::get(0, 0, 0)));
 							$player->getInventory()->setHelmet(Item::get(Item::GOLD_HELMET));
@@ -269,13 +269,13 @@ class SurvivalGamesV3 extends PluginBase implements Listener {
 							$player->getInventory()->setItem(0, Item::get(Item::IRON_AXE, 0, 1));
 							$player->getInventory()->setHotbarSlotIndex(0, 0);
 						}
-						else if($rank == "§b[§4You§7Tuber§4+§b]")
+						else if($rank == "§8[§9MVP§8]")
 						{
 							$player->getInventory()->setContents(array(Item::get(0, 0, 0)));
-							$player->getInventory()->setHelmet(Item::get(Item::DIAMOND_HELMET));
-							$player->getInventory()->setChestplate(Item::get(Item::CHAIN_CHESTPLATE));
+							$player->getInventory()->setHelmet(Item::get(Item::IRON_HELMET));
+							$player->getInventory()->setChestplate(Item::get(Item::DIAMOND_CHESTPLATE));
 							$player->getInventory()->setLeggings(Item::get(Item::CHAIN_LEGGINGS));
-							$player->getInventory()->setBoots(Item::get(Item::DIAMOND_BOOTS));
+							$player->getInventory()->setBoots(Item::get(Item::IRON_BOOTS));
 							$player->getInventory()->setItem(0, Item::get(Item::DIAMOND_AXE, 0, 1));
 							$player->getInventory()->setHotbarSlotIndex(0, 0);
 						}
@@ -413,7 +413,7 @@ class GameSender extends PluginTask {
 								{
 									foreach($playersArena as $pl)
 									{
-										$p1->sendTip($this->prefix . "You've won an SurvivalGames Match!");
+										$p1->sendMessage($this->prefix . "You've won a HungerGames Match!");
 										$pl->getInventory()->clearAll();
 										$pl->removeAllEffects();
 										$pl->setNameTag($pl->getName());
@@ -440,7 +440,7 @@ class GameSender extends PluginTask {
 								{
 									foreach($playersArena as $pl)
 									{
-										$pl->sendMessage($this->prefix . "The chests have been refilled!");
+										$pl->sendMessage($this->prefix . "All chests have been refilled!");
 									}
 									$this->refillChests($levelArena);
 								}
@@ -504,6 +504,7 @@ class GameSender extends PluginTask {
 									$spawn = $this->plugin->getServer()->getDefaultLevel()->getSafeSpawn();
 									$this->plugin->getServer()->getDefaultLevel()->loadChunk($spawn->getX(), $spawn->getZ());
 									$pl->teleport($spawn);
+									$this->api->addMoney($p1->getName(),50);
 								}
 								$config->set($arena . "PlayTime", 800);
 								$config->set($arena . "StartTime", 60);
@@ -512,7 +513,7 @@ class GameSender extends PluginTask {
 							{
 								foreach($playersArena as $pl)
 								{
-								$pl->sendTip(TextFormat::RED . "A game requires 2 players!");
+								$pl->sendPopup(TextFormat::RED . "A game requires 2 players!");
 								
 								}
 								$config->set($arena . "PlayTime", 800);
